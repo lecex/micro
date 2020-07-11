@@ -45,6 +45,9 @@ import (
 	_ "github.com/micro/micro/v2/internal/plugins"
 	"github.com/micro/micro/v2/internal/update"
 	_ "github.com/micro/micro/v2/internal/usage"
+
+	// registry
+	_ "github.com/micro/go-plugins/registry/kubernetes/v2"
 )
 
 var (
