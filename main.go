@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"path/filepath"
 
@@ -8,6 +9,7 @@ import (
 
 	"github.com/micro/go-micro/v2/util/log"
 	apiv1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/util/homedir"
@@ -22,9 +24,9 @@ func main() {
 		kubeconfig = flag.String("kubeconfig", "", "absolute path to the kubeconfig file")
 	}
 	flag.Parse()
-	log.Log(kubeconfig)
+	log.Log(1, kubeconfig)
 	config, err := clientcmd.BuildConfigFromFlags("", *kubeconfig)
-	log.Log(config)
+	log.Log(2, config)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -32,10 +34,16 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.Log(clientset)
+	log.Log(3, clientset)
 	deploymentsClient := clientset.AppsV1().Deployments(apiv1.NamespaceDefault)
-	log.Log(deploymentsClient)
+	log.Log(4, deploymentsClient)
+	log.Log(5, apiv1.NamespaceDefault)
+	list, err := deploymentsClient.List(context.TODO(), metav1.ListOptions{})
+	if err != nil {
+		panic(err)
+	}
 
+	log.Log(6, list)
 	cmd.Init()
 
 }
