@@ -33,6 +33,8 @@ require (
 	golang.org/x/tools v0.0.0-20191216173652-a0e659d51361
 	google.golang.org/genproto v0.0.0-20191216164720-4f79533eabd1
 	google.golang.org/grpc v1.26.0
-	k8s.io/client-go v0.18.5 // indirect
+	k8s.io/api v0.18.5
+	k8s.io/apimachinery v0.18.5
+	k8s.io/client-go v0.18.5
 	k8s.io/utils v0.0.0-20200619165400-6e3d28b6ed19 // indirect
 )
