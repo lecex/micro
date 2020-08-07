@@ -41,7 +41,7 @@ import (
 	"{{.Dir}}/handler"
 	"{{.Dir}}/subscriber"
 
-	{{dehyphen .Alias}} "{{.Dir}}/proto/{{.Alias}}"
+	{{.Alias}} "{{.Dir}}/proto/{{.Alias}}"
 )
 
 func main() {
@@ -55,7 +55,7 @@ func main() {
 	service.Init()
 
 	// Register Handler
-	{{dehyphen .Alias}}.Register{{title .Alias}}Handler(service.Server(), new(handler.{{title .Alias}}))
+	{{.Alias}}.Register{{title .Alias}}Handler(service.Server(), new(handler.{{title .Alias}}))
 
 	// Register Struct as Subscriber
 	micro.RegisterSubscriber("{{.FQDN}}", service.Server(), new(subscriber.{{title .Alias}}))
@@ -75,7 +75,7 @@ import (
 	"{{.Dir}}/handler"
 	"{{.Dir}}/client"
 
-	{{dehyphen .Alias}} "{{.Dir}}/proto/{{.Alias}}"
+	{{.Alias}} "{{.Dir}}/proto/{{.Alias}}"
 )
 
 func main() {
@@ -92,7 +92,7 @@ func main() {
 	)
 
 	// Register Handler
-	{{dehyphen .Alias}}.Register{{title .Alias}}Handler(service.Server(), new(handler.{{title .Alias}}))
+	{{.Alias}}.Register{{title .Alias}}Handler(service.Server(), new(handler.{{title .Alias}}))
 
 	// Run service
 	if err := service.Run(); err != nil {
@@ -125,7 +125,7 @@ func main() {
 	service.Handle("/", http.FileServer(http.Dir("html")))
 
 	// register call handler
-	service.HandleFunc("/{{dehyphen .Alias}}/call", handler.{{title .Alias}}Call)
+	service.HandleFunc("/{{.Alias}}/call", handler.{{title .Alias}}Call)
 
 	// run service
         if err := service.Run(); err != nil {

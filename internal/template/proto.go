@@ -3,7 +3,9 @@ package template
 var (
 	ProtoFNC = `syntax = "proto3";
 
-package {{dehyphen .FQDN}};
+package {{.FQDN}};
+
+option go_package = "{{.Dir}}/proto/{{.Alias}}";
 
 service {{title .Alias}} {
 	rpc Call(Request) returns (Response) {}
@@ -24,7 +26,7 @@ message Response {
 
 	ProtoSRV = `syntax = "proto3";
 
-package {{dehyphen .FQDN}};
+package {{.FQDN}};
 
 service {{title .Alias}} {
 	rpc Call(Request) returns (Response) {}
@@ -63,9 +65,9 @@ message Pong {
 
 	ProtoAPI = `syntax = "proto3";
 
-package {{dehyphen .FQDN}};
+package {{.FQDN}};
 
-import "proto/imports/api.proto";
+import "github.com/micro/go-micro/api/proto/api.proto";
 
 service {{title .Alias}} {
 	rpc Call(go.api.Request) returns (go.api.Response) {}

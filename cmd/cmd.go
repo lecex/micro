@@ -2,52 +2,38 @@ package cmd
 
 import (
 	"fmt"
-	"math"
-	"os"
-	"os/exec"
-	"sort"
 
 	ccli "github.com/micro/cli/v2"
 	"github.com/micro/go-micro/v2"
 	"github.com/micro/go-micro/v2/config/cmd"
-	gostore "github.com/micro/go-micro/v2/store"
+	"github.com/micro/micro/v2/api"
+	"github.com/micro/micro/v2/auth"
+	"github.com/micro/micro/v2/bot"
+	"github.com/micro/micro/v2/broker"
+	"github.com/micro/micro/v2/cli"
+	"github.com/micro/micro/v2/config"
+	"github.com/micro/micro/v2/debug"
+	"github.com/micro/micro/v2/health"
+	"github.com/micro/micro/v2/monitor"
+	"github.com/micro/micro/v2/network"
+	"github.com/micro/micro/v2/new"
 	"github.com/micro/micro/v2/plugin"
 	"github.com/micro/micro/v2/plugin/build"
+	"github.com/micro/micro/v2/proxy"
+	"github.com/micro/micro/v2/registry"
+	"github.com/micro/micro/v2/router"
+	"github.com/micro/micro/v2/runtime"
 	"github.com/micro/micro/v2/server"
 	"github.com/micro/micro/v2/service"
+	"github.com/micro/micro/v2/store"
+	"github.com/micro/micro/v2/token"
+	"github.com/micro/micro/v2/tunnel"
+	"github.com/micro/micro/v2/web"
 
-	// clients
-	"github.com/micro/micro/v2/client/api"
-	"github.com/micro/micro/v2/client/bot"
-	"github.com/micro/micro/v2/client/cli"
-	"github.com/micro/micro/v2/client/cli/new"
-	"github.com/micro/micro/v2/client/cli/util"
-	"github.com/micro/micro/v2/client/proxy"
-	"github.com/micro/micro/v2/client/web"
+	// include usage
 
-	// services
-	"github.com/micro/micro/v2/service/auth"
-	"github.com/micro/micro/v2/service/broker"
-	"github.com/micro/micro/v2/service/config"
-	"github.com/micro/micro/v2/service/debug"
-	"github.com/micro/micro/v2/service/health"
-	"github.com/micro/micro/v2/service/network"
-	"github.com/micro/micro/v2/service/registry"
-	"github.com/micro/micro/v2/service/router"
-	"github.com/micro/micro/v2/service/runtime"
-	"github.com/micro/micro/v2/service/store"
-	"github.com/micro/micro/v2/service/tunnel"
-
-	// internals
-	inauth "github.com/micro/micro/v2/internal/auth"
-	"github.com/micro/micro/v2/internal/helper"
 	"github.com/micro/micro/v2/internal/platform"
-	_ "github.com/micro/micro/v2/internal/plugins"
-	"github.com/micro/micro/v2/internal/update"
 	_ "github.com/micro/micro/v2/internal/usage"
-
-	// registry
-	_ "github.com/micro/go-plugins/registry/kubernetes/v2"
 )
 
 var (
@@ -56,7 +42,7 @@ var (
 	BuildDate string
 
 	name        = "micro"
-	description = "A microservice runtime\n\n	 Use `micro [command] --help` to see command specific help."
+	description = "A microservice runtime"
 	version     = "latest"
 )
 
@@ -113,12 +99,6 @@ func setup(app *ccli.App) {
 			Name:    "api_address",
 			Usage:   "Set the api address e.g 0.0.0.0:8080",
 			EnvVars: []string{"MICRO_API_ADDRESS"},
-		},
-		&ccli.StringFlag{
-			Name:    "namespace",
-			Usage:   "Set the micro service namespace",
-			EnvVars: []string{"MICRO_NAMESPACE"},
-			Value:   "micro",
 		},
 		&ccli.StringFlag{
 			Name:    "proxy_address",
@@ -185,12 +165,6 @@ func setup(app *ccli.App) {
 			Usage:   "Enable automatic updates",
 			EnvVars: []string{"MICRO_AUTO_UPDATE"},
 		},
-		&ccli.StringFlag{
-			Name:    "update_url",
-			Usage:   "Set the url to retrieve system updates from",
-			EnvVars: []string{"MICRO_UPDATE_URL"},
-			Value:   update.DefaultURL,
-		},
 		&ccli.BoolFlag{
 			Name:    "report_usage",
 			Usage:   "Report usage statistics",
@@ -198,10 +172,10 @@ func setup(app *ccli.App) {
 			Value:   true,
 		},
 		&ccli.StringFlag{
-			Name:    "env",
-			Aliases: []string{"e"},
-			Usage:   "Override environment",
-			EnvVars: []string{"MICRO_ENV"},
+			Name:    "namespace",
+			Usage:   "Set the micro service namespace",
+			EnvVars: []string{"MICRO_NAMESPACE"},
+			Value:   "go.micro",
 		},
 	)
 
@@ -220,7 +194,6 @@ func setup(app *ccli.App) {
 	before := app.Before
 
 	app.Before = func(ctx *ccli.Context) error {
-
 		if len(ctx.String("api_handler")) > 0 {
 			api.Handler = ctx.String("api_handler")
 		}
@@ -258,53 +231,8 @@ func setup(app *ccli.App) {
 			}
 		}
 
-		util.SetupCommand(ctx)
 		// now do previous before
-		if err := before(ctx); err != nil {
-			// DO NOT return this error otherwise the action will fail
-			// and help will be printed.
-			fmt.Println(err)
-			os.Exit(1)
-			return err
-		}
-
-		var opts []gostore.Option
-
-		// the database is not overriden by flag then set it
-		if len(ctx.String("store_database")) == 0 {
-			opts = append(opts, gostore.Database(cmd.App().Name))
-		}
-
-		// if the table is not overriden by flag then set it
-		if len(ctx.String("store_table")) == 0 {
-			table := cmd.App().Name
-
-			// if an arg is specified use that as the name
-			// so each service has its own table preconfigured
-			if name := ctx.Args().First(); len(name) > 0 {
-				table = name
-			}
-
-			opts = append(opts, gostore.Table(table))
-		}
-
-		// TODO: move this entire initialisation elsewhere
-		// maybe in service.Run so all things are configured
-		if len(opts) > 0 {
-			(*cmd.DefaultCmd.Options().Store).Init(opts...)
-		}
-
-		// add the system rules if we're using the JWT implementation
-		// which doesn't have access to the rules in the auth service
-		if (*cmd.DefaultCmd.Options().Auth).String() == "jwt" {
-			for _, rule := range inauth.SystemRules {
-				if err := (*cmd.DefaultCmd.Options().Auth).Grant(rule); err != nil {
-					return err
-				}
-			}
-		}
-
-		return nil
+		return before(ctx)
 	}
 }
 
@@ -337,35 +265,9 @@ func Init(options ...micro.Option) {
 	)
 }
 
-var commandOrder = []string{"server", "new", "env", "login", "run", "logs", "call", "update", "kill", "store", "config", "auth", "status", "stream", "file"}
-
-type commands []*ccli.Command
-
-func (s commands) Len() int      { return len(s) }
-func (s commands) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
-func (s commands) Less(i, j int) bool {
-	index := map[string]int{}
-	for i, v := range commandOrder {
-		index[v] = i
-	}
-	iVal, ok := index[s[i].Name]
-	if !ok {
-		iVal = math.MaxInt32
-	}
-	jVal, ok := index[s[j].Name]
-	if !ok {
-		jVal = math.MaxInt32
-	}
-	return iVal < jVal
-}
-
 // Setup sets up a cli.App
 func Setup(app *ccli.App, options ...micro.Option) {
 	// Add the various commands
-	app.Commands = append(app.Commands, new.Commands()...)
-	app.Commands = append(app.Commands, runtime.Commands(options...)...)
-	app.Commands = append(app.Commands, store.Commands(options...)...)
-	app.Commands = append(app.Commands, config.Commands(options...)...)
 	app.Commands = append(app.Commands, api.Commands(options...)...)
 	app.Commands = append(app.Commands, auth.Commands()...)
 	app.Commands = append(app.Commands, bot.Commands()...)
@@ -373,15 +275,21 @@ func Setup(app *ccli.App, options ...micro.Option) {
 	app.Commands = append(app.Commands, broker.Commands(options...)...)
 	app.Commands = append(app.Commands, health.Commands(options...)...)
 	app.Commands = append(app.Commands, proxy.Commands(options...)...)
+	app.Commands = append(app.Commands, monitor.Commands(options...)...)
 	app.Commands = append(app.Commands, router.Commands(options...)...)
 	app.Commands = append(app.Commands, tunnel.Commands(options...)...)
 	app.Commands = append(app.Commands, network.Commands(options...)...)
 	app.Commands = append(app.Commands, registry.Commands(options...)...)
+	app.Commands = append(app.Commands, runtime.Commands(options...)...)
 	app.Commands = append(app.Commands, debug.Commands(options...)...)
 	app.Commands = append(app.Commands, server.Commands(options...)...)
 	app.Commands = append(app.Commands, service.Commands(options...)...)
+	app.Commands = append(app.Commands, store.Commands(options...)...)
+	app.Commands = append(app.Commands, token.Commands()...)
+	app.Commands = append(app.Commands, new.Commands()...)
 	app.Commands = append(app.Commands, build.Commands()...)
 	app.Commands = append(app.Commands, web.Commands(options...)...)
+	app.Commands = append(app.Commands, config.Commands(options...)...)
 
 	// add the init command for our internal operator
 	app.Commands = append(app.Commands, &ccli.Command{
@@ -394,29 +302,8 @@ func Setup(app *ccli.App, options ...micro.Option) {
 		Flags: []ccli.Flag{},
 	})
 
-	sort.Sort(commands(app.Commands))
-
 	// boot micro runtime
-	app.Action = func(c *ccli.Context) error {
-		if c.Args().Len() > 0 {
-			command := c.Args().First()
-
-			v, err := exec.LookPath(command)
-			if err != nil {
-				fmt.Println(helper.UnexpectedCommand(c))
-				os.Exit(1)
-			}
-
-			// execute the command
-			ce := exec.Command(v, c.Args().Slice()[1:]...)
-			ce.Stdout = os.Stdout
-			ce.Stderr = os.Stderr
-			return ce.Run()
-		}
-		fmt.Println(helper.MissingCommand(c))
-		os.Exit(1)
-		return nil
-	}
+	app.Action = func(c *ccli.Context) error { return ccli.ShowAppHelp(c) }
 
 	setup(app)
 }

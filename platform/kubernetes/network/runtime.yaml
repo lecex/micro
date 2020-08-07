@@ -13,7 +13,6 @@ rules:
   resources:
   - pods
   - services
-  - namespaces
   verbs:
   - create
   - update
@@ -36,25 +35,10 @@ rules:
   - ""
   resources:
   - secrets
-  - pods
-  - pods/logs
   verbs:
   - get
   - watch
   - list
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  name: micro-runtime
-subjects:
-- kind: ServiceAccount
-  name: micro-runtime
-  namespace: default
-roleRef:
-  kind: ClusterRole
-  name: micro-runtime
-  apiGroup: rbac.authorization.k8s.io
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
@@ -94,23 +78,10 @@ spec:
         name: micro-runtime
         micro: runtime
     spec:
-      serviceAccount: micro-runtime
       serviceAccountName: micro-runtime
       containers:
       - name: runtime
         env:
-        - name: MICRO_AUTH
-          value: "jwt"
-        - name: MICRO_AUTH_PUBLIC_KEY
-          valueFrom:
-            secretKeyRef:
-              name: micro-keypair
-              key: public
-        - name: MICRO_AUTH_PRIVATE_KEY
-          valueFrom:
-            secretKeyRef:
-              name: micro-keypair
-              key: private
         - name: MICRO_BROKER
           value: "nats"
         - name: MICRO_BROKER_ADDRESS
@@ -128,9 +99,22 @@ spec:
         - name: MICRO_LOG_LEVEL
           value: "debug"
         - name: MICRO_STORE
-          value: "cockroach"
-        - name: MICRO_STORE_ADDRESS
-          value: "postgres://root@cockroachdb-public:26257/?sslmode=disable"
+          value: "cloudflare"
+        - name: CF_API_TOKEN
+          valueFrom:
+            secretKeyRef:
+              key: CF_API_TOKEN
+              name: cloudflare-credentials
+        - name: CF_ACCOUNT_ID
+          valueFrom:
+            secretKeyRef:
+              key: CF_ACCOUNT_ID
+              name: cloudflare-credentials
+        - name: KV_NAMESPACE_ID
+          valueFrom:
+            secretKeyRef:
+              key: KV_NAMESPACE_ID_RUNTIME
+              name: cloudflare-credentials
         args:
         - runtime
         image: micro/micro

@@ -1,41 +1,15 @@
-# Platform
+# Micro Platform
 
-This directory serves as platform bootstrapping for Micro.
+The micro platform is a serverless platform for microservices development
 
 ## Overview
 
-The platform provides **Micro as a Service** as a fully managed solution. The platform is 
-bootstrapped onto Kubernetes on any major cloud provider, including load balancing and 
-dns management. This repository serves as the entrypoint and single location for all bootstrapping
-related source code and documentation.
+**M3O** is a serverless platform for microservices development based on the open source Micro Runtime. 
+This directory serves as the location for all related configuration for running the platform. Micro, the company, 
+is providing a hosted offering but anyone should be free to pickup and run this configuration for themselves anywhere.
 
-## Usage
+You should be able to pick up and use the configuration here on kubernetes for a self-hosted serverless platform.
 
-Install the platform binary
+## Getting Started
 
-```
-go get github.com/micro/micro/cmd/platform
-```
-
-To bootstrap the platform, create a [config.yaml](./config-test.yaml), and prepare a AWS S3 bucket
-for [terraform state storage](https://www.terraform.io/docs/backends/types/s3.html).
-
-Then run
-
-```
-platform infra plan -c config.yaml
-platform infra apply -c config.yaml
-```
-
-To destroy the cluster
-
-```
-platform infra destroy -c config.yaml
-```
-
-Configuration options can be set with viper, for example
-[the state-store flag](https://github.com/micro/platform/blob/cc27173/cmd/infra.go#L44) can be set by
-setting the environment variable `MICRO_STATE_STORE`.
-
-See the [docs](docs) for more info.
-
+For self hosting look at the [kubernetes](https://github.com/micro/micro/tree/master/platform/kubernetes) repo. To learn more about the M3O serverless platform see the [docs](https://micro.mu/docs/platform.html).

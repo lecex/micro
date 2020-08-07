@@ -21,18 +21,6 @@ spec:
       containers:
       - name: micro-config
         env:
-        - name: MICRO_AUTH
-          value: "jwt"
-        - name: MICRO_AUTH_PUBLIC_KEY
-          valueFrom:
-            secretKeyRef:
-              name: micro-keypair
-              key: public
-        - name: MICRO_AUTH_PRIVATE_KEY
-          valueFrom:
-            secretKeyRef:
-              name: micro-keypair
-              key: private
         - name: MICRO_SERVER_ADDRESS
           value: "0.0.0.0:8080"
         - name: MICRO_LOG_LEVEL
@@ -45,10 +33,25 @@ spec:
           value: "etcd"
         - name: MICRO_REGISTRY_ADDRESS
           value: "etcd-cluster-client"
+        - name: MICRO_CONFIG_DATABASE
+          value: "store"
         - name: MICRO_STORE
-          value: "cockroach"
-        - name: MICRO_STORE_ADDRESS
-          value: "postgres://root@cockroachdb-public:26257/?sslmode=disable"
+          value: "cloudflare"
+        - name: CF_API_TOKEN
+          valueFrom:
+            secretKeyRef:
+              key: CF_API_TOKEN
+              name: cloudflare-credentials
+        - name: CF_ACCOUNT_ID
+          valueFrom:
+            secretKeyRef:
+              key: CF_ACCOUNT_ID
+              name: cloudflare-credentials
+        - name: KV_NAMESPACE_ID
+          valueFrom:
+            secretKeyRef:
+              key: KV_NAMESPACE_ID_CONFIG
+              name: cloudflare-credentials
         image: micro/micro
         imagePullPolicy: Always
         command:

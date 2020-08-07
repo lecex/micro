@@ -9,7 +9,6 @@ import (
 
 	"github.com/micro/cli/v2"
 	"github.com/micro/go-micro/v2/registry"
-	"github.com/micro/go-micro/v2/util/backoff"
 	"github.com/micro/micro/v2/plugin"
 )
 
@@ -64,14 +63,8 @@ func Plugin() plugin.Plugin {
 					u.Metrics.Count["requests"] = reqs
 					u.Metrics.Count["services"] = srvs
 
-					// attempt to send report 3 times
-					for i := 1; i <= 3; i++ {
-						if err := Report(u); err != nil {
-							time.Sleep(backoff.Do(i * 2))
-							continue
-						}
-						break
-					}
+					// send report
+					Report(u)
 
 					// now sleep 24 hours
 					time.Sleep(time.Hour * 24)

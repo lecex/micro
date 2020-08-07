@@ -27,13 +27,6 @@ spec:
       containers:
       - name: proxy
         env:
-        - name: MICRO_AUTH
-          value: "service"
-        - name: MICRO_AUTH_PUBLIC_KEY
-          valueFrom:
-            secretKeyRef:
-              name: micro-keypair
-              key: public
         - name: MICRO_PROXY_ADDRESS
           value: "0.0.0.0:443"
         - name: MICRO_SERVER_ADDRESS
@@ -54,17 +47,28 @@ spec:
           value: certmagic
         - name: MICRO_ACME_HOSTS
           value: '*.micro.mu,*.cloud.micro.mu,micro.mu'
-        - name: MICRO_STORE
-          value: "service"
-        - name: MICRO_STORE_DATABASE
-          value: "micro"
-        - name: MICRO_STORE_TABLE
-          value: "micro"
         - name: CF_API_TOKEN
           valueFrom:
             secretKeyRef:
               key: CF_API_TOKEN
               name: cloudflare-credentials
+        - name: CF_ACCOUNT_ID
+          valueFrom:
+            secretKeyRef:
+              key: CF_ACCOUNT_ID
+              name: cloudflare-credentials
+        - name: KV_NAMESPACE_ID
+          valueFrom:
+            secretKeyRef:
+              key: KV_NAMESPACE_ID
+              name: cloudflare-credentials
+        - name: MICRO_AUTH
+          value: "service"
+        - name: MICRO_AUTH_PUBLIC_KEY
+          valueFrom:
+            secretKeyRef:
+              name: micro-keypair
+              key: public
         args:
         - proxy
         image: micro/micro
