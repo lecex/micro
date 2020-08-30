@@ -32,3 +32,9 @@ clean:
 	rm -rf ./micro
 
 .PHONY: build clean vet test docker
+
+.PHONY: rpc
+run:
+	export MICRO_SELECTOR=static
+	export MICRO_REGISTRY=static
+	go run main.go api  --handler=rpc  --namespace=go.micro.api-

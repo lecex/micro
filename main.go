@@ -1,7 +1,7 @@
 package main
 
 import (
-	_ "github.com/micro/go-plugins/registry/nats/v2"
+	_ "github.com/lecex/core/plugins" // 插件在后面执行
 	"github.com/micro/micro/v2/cmd"
 )
 
