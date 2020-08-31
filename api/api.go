@@ -72,9 +72,6 @@ func run(ctx *cli.Context, srvOpts ...micro.Option) {
 	if len(ctx.String("resolver")) > 0 {
 		Resolver = ctx.String("resolver")
 	}
-	if len(ctx.String("api_path")) > 0 {
-		APIPath = ctx.String("api_path")
-	}
 	if len(ctx.String("enable_rpc")) > 0 {
 		EnableRPC = ctx.Bool("enable_rpc")
 	}
@@ -354,11 +351,6 @@ func Commands(options ...micro.Option) []*cli.Command {
 				Name:    "resolver",
 				Usage:   "Set the hostname resolver used by the API {host, path, grpc}",
 				EnvVars: []string{"MICRO_API_RESOLVER"},
-			},
-			&cli.StringFlag{
-				Name:    "api_path",
-				Usage:   "Set the API path",
-				EnvVars: []string{"MICRO_API_API_PATH"},
 			},
 			&cli.BoolFlag{
 				Name:    "enable_rpc",
