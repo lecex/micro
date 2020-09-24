@@ -12,3 +12,4 @@ RUN apk add ca-certificates && \
 
 COPY --from=builder /micro .
 ENTRYPOINT ["/micro"]
+EXPOSE 8080
